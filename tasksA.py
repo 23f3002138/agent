@@ -29,7 +29,7 @@ def A1(email="24f1002359@ds.study.iitm.ac.in"):
         raise HTTPException(status_code=500, detail=f"Error: {e.stderr}")
 # A1()
 def A2(prettier_version="prettier@3.4.2", filename="/data/format.md"):
-    command = [r"C:\Program Files\nodejs\npx.cmd", prettier_version, "--write", filename]
+    command = [r"npx", "--yes", prettier_version, "--write",filename]
     try:
         subprocess.run(command, check=True)
         print("Prettier executed successfully.")
@@ -238,55 +238,29 @@ def get_embedding(text):
 #         f.write(most_similar[0] + '\n')
 #         f.write(most_similar[1] + '\n')
 
-def A9(filename='/data/comments.txt', output_filename='/data/comments-similar.txt'):
-    try:
-        # Read comments
-        with open(filename, 'r') as f:
-            comments = [line.strip() for line in f.readlines()]
+def A9(filename="/data/comments.txt", output_filename="/data/comments-similar.txt"):
+    # Read comments
+    with open(filename, "r") as f:
+        comments = [line.strip() for line in f.readlines()]
 
-        # Check if there are at least two comments
-        if len(comments) < 2:
-            raise ValueError("Not enough comments to compare.")
+    # Get embeddings for all comments
+    embeddings = [get_embedding(comment) for comment in comments]
 
-        # Get embeddings for all comments
-        embeddings = []
-        for comment in comments:
-            try:
-                embedding = get_embedding(comment)
-                embeddings.append(embedding)
-            except Exception as e:
-                print(f"Error getting embedding for comment: {comment}. Error: {e}")
-                embeddings.append(None)
+    # Find the most similar pair
+    min_distance = float("inf")
+    most_similar = (None, None)
 
-        # Find the most similar pair (ignoring None values in embeddings)
-        min_distance = float('inf')
-        most_similar = (None, None)
+    for i in range(len(comments)):
+        for j in range(i + 1, len(comments)):
+            distance = cosine(embeddings[i], embeddings[j])
+            if distance < min_distance:
+                min_distance = distance
+                most_similar = (comments[i], comments[j])
 
-        for i in range(len(comments)):
-            if embeddings[i] is None:
-                continue  # Skip comments where embeddings couldn't be obtained
-            for j in range(i + 1, len(comments)):
-                if embeddings[j] is None:
-                    continue  # Skip comments where embeddings couldn't be obtained
-                distance = cosine(embeddings[i], embeddings[j])
-                if distance < min_distance:
-                    min_distance = distance
-                    most_similar = (comments[i], comments[j])
-
-        # Check if we found a similar pair
-        if most_similar == (None, None):
-            print("No similar comments found.")
-            return
-
-        # Write the most similar pair to file
-        with open(output_filename, 'w') as f:
-            f.write(most_similar[0] + '\n')
-            f.write(most_similar[1] + '\n')
-
-        print(f"Most similar comments: \n{most_similar[0]} \n{most_similar[1]}")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    # Write the most similar pair to file
+    with open(output_filename, "w") as f:
+        f.write(most_similar[0] + "\n")
+        f.write(most_similar[1]+"\n")
         
 def A10(filename='/data/ticket-sales.db', output_filename='/data/ticket-sales-gold.txt', query="SELECT SUM(units * price) FROM tickets WHERE type = 'Gold'"):
     # Connect to the SQLite database
