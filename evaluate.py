@@ -9,7 +9,7 @@
 # ]
 # ///
 import hashlib
-import htppx
+import httpx
 import json
 import logging
 import numpy as np
